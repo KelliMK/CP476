@@ -19,11 +19,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         $sql = "SELECT UserID FROM users WHERE Username = :Username";
         
         if ($statement = $conn->prepare($sql)){
-            // Bind variables to the prepared statement as parameters
-            $statement->bindParam(":Username", $paramUsername, PDO::PARAM_STR);
-            
             // Set parameters
             $paramUsername = trim($_POST["Username"]);
+
+            // Bind variables to the prepared statement as parameters
+            $statement->bindParam(":Username", $paramUsername, PDO::PARAM_STR);
             
             // Attempt to execute the prepared statement
             if ($statement->execute()){
@@ -67,13 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         $sql = "INSERT INTO users (Username, UserPass) VALUES (:Username, :UserPass)";
 
         if ($statement = $conn->prepare($sql)){
-            // Bind variables to the prepared statement as parameters
-            $statement->bindParam(":Username", $paramUsername, PDO::PARAM_STR);
-            $statement->bindParam(":UserPass", $paramUserPass, PDO::PARAM_STR);
-            
             // Set parameters
             $paramUsername = $Username;
             $paramUserPass = password_hash($UserPass, PASSWORD_DEFAULT); // Creates a password hash
+
+            // Bind variables to the prepared statement as parameters
+            $statement->bindParam(":Username", $paramUsername, PDO::PARAM_STR);
+            $statement->bindParam(":UserPass", $paramUserPass, PDO::PARAM_STR);
             
             // Attempt to execute the prepared statement
             if ($statement->execute()){
@@ -123,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         <label>Confirm Password</label>
         <input type="password" name="confirm_password" value="<?php echo $confirm_password; ?>">
         <span class="invalid-feedback"><?php echo $confirm_password_err; ?></span><br>
-        <input type="submit" value="Submit">
+        <input type="submit" name="submit" value="Submit">
         <input type="reset" value="Reset">
         <p>Already have an account? <a href="login.php" class="button">Login here</a></p>
     </form>   
