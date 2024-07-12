@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
                 if ($statement->rowCount() == 1){
                     $username_err = "This username is already taken.";
                 } else {
-                    $username = trim($_POST["Username"]);
+                    $Username = trim($_POST["Username"]);
                 }
             } else {
                 echo "Oops! Something went wrong. Please try again later.";
