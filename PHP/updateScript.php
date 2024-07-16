@@ -172,15 +172,20 @@ if (isset($_POST["ProdID"]) && !empty($_POST["ProdID"])) {
 	}
 </style>
 <head>
+	// Browser tab name
 	<title>Update Product Entry</title>
 </head>
 <body>
+	// Page headline
 	<h1>Update Product Entry</h1><br>
+	// sub headline
 	<p>Edit below input values and submit to update product entry.</p><br>
 	<form action="<?php echo htmlspecialchars(basename($_SERVER['REQUEST_URI'])); ?>" method="post">
+		// Product Name field
 		<label>Product Name:</label>
 		<input type="text" name="ProdName" value="<?php echo $ProdName; ?>"><br>
 		<span class="invalid-feedback"><?php echo $name_err;?></span>
+		// Description name field
 		<label>Description:</label>
 		<input type="text" name="Description" value="<?php echo $Description; ?>"><br>
 		<span class="invalid-feedback"><?php echo $desc_err;?></span>
