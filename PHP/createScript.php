@@ -9,6 +9,9 @@
 		background-color: buttonface;
 		text-decoration: none;
 	}
+	p.red {
+		color: "#ff0000";
+	}
 </style>
 <head>
 	<title>New Inventory Entry</title>
@@ -28,16 +31,33 @@
 	}
 
 		// Variables
-	$ProdName = $Description = $Price = $Quantity = $Status = $SupplierID = "";
-	$name_err = $desc_err = $price_err = $quantity_err = $status_err = $supp_err = "";
+	$ProdName = $ProdID = $Description = $Price = $Quantity = $Status = $SupplierID = "";
+	$name_err = $id_err = $desc_err = $price_err = $quantity_err = $status_err = $supp_err = "";
 
-	$fck = $conn->prepare("SELECT SuppID FROM supplier_table");
-	$fck->execute();
-	$suppliers = $fck->fetchAll(PDO::FETCH_COLUMN);
+	$IDConn = $conn->prepare("SELECT ProdID FROM product_table");
+	$IDConn->execute();
+	$productIDs = $IDConn->fetchAll(PDO::FETCH_COLUMN);
+
+	$suppConn = $conn->prepare("SELECT SuppID FROM supplier_table");
+	$suppConn->execute();
+	$suppliers = $suppConn->fetchAll(PDO::FETCH_COLUMN);
 
 
 	if ($_SERVER["REQUEST_METHOD"] == "POST") {
-			// Validate name
+		
+		// Validate ID
+		$IDIn = trim($_POST["ProdID"]);
+		if (!filter_var($IDIn, FILTER_VALIDATE_INT)) {
+			$id_err = "ID must be an integer between 0 and 9999 inclusively.";
+		} elseif ($IDIn < 0 || $IDIn > 9999) {
+			$id_err = "ID should be an integer between 0000 and 9999.";
+		} elseif (array_search($IDIn, $productIDs)) {
+			$id_err = "ID already in Product Table.";
+		} else {
+			$ProdID = $IDIn;
+		}
+
+		// Validate name
 		$nameIn = trim($_POST["ProdName"]);
 		if ($nameIn == ""){
 			$name_err = "Enter the product's name.";
@@ -49,7 +69,7 @@
 			$ProdName = $nameIn;
 		}
 
-			// Validate Description
+		// Validate Description
 		$descIn = trim($_POST["Description"]);
 		if (!filter_var($descIn, FILTER_VALIDATE_REGEXP, array("options"=>array("regexp"=>"/^[a-zA-Z \s]+$/")))) {
 			$desc_err = "Descriptions can only have alphanumeric characters and spaces.";
@@ -59,7 +79,7 @@
 			$Description = $descIn;
 		}
 
-			// Validate Price
+		// Validate Price
 		$priceIn = trim($_POST["Price"]);
 		if ($priceIn == ""){
 			$price_err = "Enter a price. 0 is accepted.";
@@ -71,7 +91,7 @@
 			$Price = $priceIn;
 		}
 
-			// Validate Quantity
+		// Validate Quantity
 		$quantityIn = trim($_POST["Quantity"]);
 		if ($quantityIn == "") {
 			$quantity_err = "Enter a quantity. Integers only.";
@@ -83,7 +103,7 @@
 			$Quantity = $quantityIn;
 		}
 
-			// validate radio buttons for Status
+		// Validate Status
 		$StatusIn = trim($_POST["Status"]);
 		if ($StatusIn == "A" || $StatusIn == "B" || $StatusIn == "C") {
 			$Status = $StatusIn;
@@ -91,27 +111,27 @@
 			$status_err = "You must give the product a status.";
 		}
 
-			// Validate SupplierID
+		// Validate SupplierID
 		$supplierIn = trim($_POST["SupplierID"]);
-
 		if ($supplierIn == "") {
 			$supp_err = "Enter valid Supplier ID.";
 		} elseif (!filter_var($supplierIn, FILTER_VALIDATE_INT)) {
 			$supp_err = "Supplier ID must be an integer.";
 		} elseif ($supplierIn < 0) {
 			$supp_err = "Supplier IDs cannot be negative.";
-		} elseif (!array_search($supplierIn, $suppliers)) {
+		} elseif (!array_search($supplierIn, $suppliers) && $supplierIn != 1357) {
 			$supp_err = "Supplier ID not found.";
 		} else {
 			$SupplierID = $supplierIn;
 		}
 
-			// Check input errors
-		if(empty($name_err) && empty($desc_err) && empty($price_err) && empty($quantity_err) && empty($supp_err)) {
-				// prepare insert statement
-			$insert = "INSERT INTO product_table (ProdName, Description, Price, Quantity, Status, SupplierID) VALUES (:ProdName, :Description, :Price, :Quantity, :Status, :SupplierID)";
+		// Check input errors
+		if(empty($id_err) && empty($name_err) && empty($desc_err) && empty($price_err) && empty($quantity_err) && empty($supp_err) && empty($status_err)) {
+			// prepare insert statement
+			$insert = "INSERT INTO product_table (ProdID, ProdName, Description, Price, Quantity, Status, SupplierID) VALUES (:ProdID, :ProdName, :Description, :Price, :Quantity, :Status, :SupplierID)";
 			if ($statement = $conn->prepare($insert)) {
-					// set params
+				// set params
+				$paramProdID = $ProdID;
 				$paramProdName = $ProdName;
 				$paramDescription = $Description;
 				$paramPrice = $Price;
@@ -119,7 +139,8 @@
 				$paramStatus = $Status;
 				$paramSupplierID = (int) $SupplierID;
 
-					// bind params
+				// bind params
+				$statement->bindParam(":ProdID", $paramProdID);
 				$statement->bindParam(":ProdName", $paramProdName);
 				$statement->bindParam(":Description", $paramDescription);
 				$statement->bindParam(":Price", $paramPrice);
@@ -129,47 +150,43 @@
 
 					// execute
 				if($statement->execute()){
-                // Records created successfully. Redirect to landing page
+                // Records created successfully. Redirect to CRUD Index page
 					header("location: indexCRUD.php");
 					exit();
 				} else {
 					echo "Form Error. Ouch dawg.";
 				}
 			}
-		} else {
-			echo $name_err . "\r\n";
-			echo $desc_err . "\r\n";
-			echo $price_err . "\r\n";
-			echo $quantity_err . "\r\n";
-			echo $status_err . "\r\n";
-			echo $supp_err . "\r\n";
-		}
+		} 
 		unset($statement);
 	}
 	$conn = null;
 	?>
 	<h2>Create Product Entry</h2>
-	<p>Please fill this form out and submit it to add a product entry to the database.</p>
+	<p>Please fill this form out and submit it to add a product entry to the database. Be advised that Product ID cannot be changed after submission.</p>
 	<form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
+		<label>Product ID:</label>
+		<input type="number" name="ProdID" value="<?php echo $ProdID; ?>"><span style="color:red"><?php echo $id_err;?></span><br>
 		<label>Product Name:</label>
-		<input type="text" name="ProdName" value="<?php echo $ProdName; ?>"><br>
+		<input type="text" name="ProdName" value="<?php echo $ProdName; ?>"><span style="color:red">* <?php echo $name_err;?></span><br>
 		<label>Description:</label>
-		<input type="text" name="Description" value="<?php echo $Description; ?>"><br>
+		<input type="text" name="Description" value="<?php echo $Description; ?>"><span style="color:red"><?php echo $desc_err;?></span><br>
 		<label>Price:</label>
-		<input type="text" name="Price" value="<?php echo $Price; ?>"><br>
+		<input type="text" name="Price" value="<?php echo $Price; ?>"><span style="color:red">* <?php echo $price_err;?></span><br>
 		<label>Quantity:</label>
-		<input type="text" name="Quantity" value="<?php echo $Quantity; ?>"><br>
+		<input type="number" name="Quantity" value="<?php echo $Quantity; ?>"><span style="color:red">* <?php echo $quantity_err;?></span><br>
 		Status:
 		<input type="radio" name="Status" 
 		<?php if (isset($Status) && $Status=="A") echo "checked";?> value='A'>A
 		<input type="radio" name="Status" 
 		<?php if (isset($Status) && $Status=="B") echo "checked";?> value='B'>B
 		<input type="radio" name="Status" 
-		<?php if (isset($Status) && $Status=="C") echo "checked";?> value='C'>C<br>
+		<?php if (isset($Status) && $Status=="C") echo "checked";?> value='C'>C <span style="color:red">* <?php echo $status_err;?></span><br>
 		<label>Supplier ID:</label>
-		<input type="text" name="SupplierID" value="<?php echo $SupplierID; ?>"><br>
+		<input type="text" name="SupplierID" value="<?php echo $SupplierID; ?>"><span style="color:red">* <?php echo $supp_err;?></span><br>
 		<input type="submit" name="submit" value="Submit">
-		<a href="indexCRUD.php" class="button">Cancel</a>
+		<a href="indexCRUD.php" class="button">Cancel</a><br><br>
+		<p><span style="color:red">*</span> indicates a required field.</p>
 	</form>
 </body>
 </html>
